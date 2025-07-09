@@ -1,0 +1,1597 @@
+# ShipStation API v2 - Inventory Resource
+# This file contains all inventory-related endpoints and schemas
+# Including: inventory levels, inventory warehouses, and inventory locations
+
+paths:
+  /v2/inventory:
+    x-visibility: public
+    summary: Inventory
+    description: |
+      Manage inventory, adjust quantities, and handle warehouses and locations.
+    get:
+      operationId: getInventoryLevels
+      summary: List SKU inventory levels
+      tags:
+        - inventory
+      parameters:
+        - name: sku
+          description: Optional list of SKUs to filter down to
+          in: query
+          schema:
+            type: string
+        - name: inventory_warehouse_id
+          in: query
+          schema:
+            type: string
+        - name: inventory_location_id
+          in: query
+          schema:
+            type: string
+        - name: group_by
+          in: query
+          description: Get counts for SKUs across locations or warehouses
+          schema:
+            type: string
+            enum:
+              - warehouse
+              - location
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Inventory levels for SKUs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sku:
+                          type: string
+                        on_hand:
+                          type: integer
+                        allocated:
+                          type: integer
+                        available:
+                          type: integer
+                        average_cost:
+                          type: object
+                          properties:
+                            amount:
+                              type: number
+                            currency:
+                              type: string
+                        inventory_warehouse_id:
+                          type: string
+                        inventory_location_id:
+                          type: string
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pages:
+                    type: integer
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      last:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      next:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      prev:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+    post:
+      operationId: adjustInventory
+      summary: Adjust inventory levels
+      tags:
+        - inventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku:
+                  type: string
+                quantity:
+                  type: integer
+                  description: The quantity to adjust by. Can be negative to decrease inventory.
+                inventory_warehouse_id:
+                  type: string
+                  description: The warehouse to adjust inventory for
+                inventory_location_id:
+                  type: string
+                  description: The location to adjust inventory for
+      responses:
+        '200':
+          description: Inventory adjusted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sku:
+                    type: string
+                  on_hand:
+                    type: integer
+                  allocated:
+                    type: integer
+                  available:
+                    type: integer
+                  inventory_warehouse_id:
+                    type: string
+                  inventory_location_id:
+                    type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+  /v2/inventory_warehouses:
+    x-visibility: public
+    summary: Inventory Warehouses
+    description: |
+      Manage inventory warehouses and their configurations.
+    get:
+      operationId: getInventoryWarehouses
+      summary: List inventory warehouses
+      tags:
+        - inventory
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of inventory warehouses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_warehouses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        inventory_warehouse_id:
+                          type: string
+                        name:
+                          type: string
+                        code:
+                          type: string
+                        address:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            company:
+                              type: string
+                            street1:
+                              type: string
+                            street2:
+                              type: string
+                            city:
+                              type: string
+                            state:
+                              type: string
+                            postal_code:
+                              type: string
+                            country:
+                              type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                        modified_at:
+                          type: string
+                          format: date-time
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pages:
+                    type: integer
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      last:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      next:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      prev:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+    post:
+      operationId: createInventoryWarehouse
+      summary: Create inventory warehouse
+      tags:
+        - inventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                code:
+                  type: string
+                address:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    company:
+                      type: string
+                    street1:
+                      type: string
+                    street2:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    postal_code:
+                      type: string
+                    country:
+                      type: string
+              required:
+                - name
+      responses:
+        '201':
+          description: Inventory warehouse created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_warehouse_id:
+                    type: string
+                  name:
+                    type: string
+                  code:
+                    type: string
+                  address:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      company:
+                        type: string
+                      street1:
+                        type: string
+                      street2:
+                        type: string
+                      city:
+                        type: string
+                      state:
+                        type: string
+                      postal_code:
+                        type: string
+                      country:
+                        type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  modified_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+  /v2/inventory_warehouses/{inventory_warehouse_id}:
+    x-visibility: public
+    summary: Inventory Warehouse
+    description: |
+      Manage a specific inventory warehouse.
+    get:
+      operationId: getInventoryWarehouse
+      summary: Get inventory warehouse
+      tags:
+        - inventory
+      parameters:
+        - name: inventory_warehouse_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Inventory warehouse details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_warehouse_id:
+                    type: string
+                  name:
+                    type: string
+                  code:
+                    type: string
+                  address:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      company:
+                        type: string
+                      street1:
+                        type: string
+                      street2:
+                        type: string
+                      city:
+                        type: string
+                      state:
+                        type: string
+                      postal_code:
+                        type: string
+                      country:
+                        type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  modified_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+    put:
+      operationId: updateInventoryWarehouse
+      summary: Update inventory warehouse
+      tags:
+        - inventory
+      parameters:
+        - name: inventory_warehouse_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                code:
+                  type: string
+                address:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    company:
+                      type: string
+                    street1:
+                      type: string
+                    street2:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    postal_code:
+                      type: string
+                    country:
+                      type: string
+      responses:
+        '200':
+          description: Inventory warehouse updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_warehouse_id:
+                    type: string
+                  name:
+                    type: string
+                  code:
+                    type: string
+                  address:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      company:
+                        type: string
+                      street1:
+                        type: string
+                      street2:
+                        type: string
+                      city:
+                        type: string
+                      state:
+                        type: string
+                      postal_code:
+                        type: string
+                      country:
+                        type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  modified_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+    delete:
+      operationId: deleteInventoryWarehouse
+      summary: Delete inventory warehouse
+      tags:
+        - inventory
+      parameters:
+        - name: inventory_warehouse_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Inventory warehouse deleted successfully
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+  /v2/inventory_locations:
+    x-visibility: public
+    summary: Inventory Locations
+    description: |
+      Manage inventory locations within warehouses.
+    get:
+      operationId: getInventoryLocations
+      summary: List inventory locations
+      tags:
+        - inventory
+      parameters:
+        - name: inventory_warehouse_id
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of inventory locations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_locations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        inventory_location_id:
+                          type: string
+                        inventory_warehouse_id:
+                          type: string
+                        name:
+                          type: string
+                        code:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                        modified_at:
+                          type: string
+                          format: date-time
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pages:
+                    type: integer
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      last:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      next:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      prev:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+    post:
+      operationId: createInventoryLocation
+      summary: Create inventory location
+      tags:
+        - inventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inventory_warehouse_id:
+                  type: string
+                name:
+                  type: string
+                code:
+                  type: string
+              required:
+                - inventory_warehouse_id
+                - name
+      responses:
+        '201':
+          description: Inventory location created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_location_id:
+                    type: string
+                  inventory_warehouse_id:
+                    type: string
+                  name:
+                    type: string
+                  code:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  modified_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+  /v2/inventory_locations/{inventory_location_id}:
+    x-visibility: public
+    summary: Inventory Location
+    description: |
+      Manage a specific inventory location.
+    get:
+      operationId: getInventoryLocation
+      summary: Get inventory location
+      tags:
+        - inventory
+      parameters:
+        - name: inventory_location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Inventory location details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_location_id:
+                    type: string
+                  inventory_warehouse_id:
+                    type: string
+                  name:
+                    type: string
+                  code:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  modified_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+    put:
+      operationId: updateInventoryLocation
+      summary: Update inventory location
+      tags:
+        - inventory
+      parameters:
+        - name: inventory_location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Inventory location updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inventory_location_id:
+                    type: string
+                  inventory_warehouse_id:
+                    type: string
+                  name:
+                    type: string
+                  code:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  modified_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+    delete:
+      operationId: deleteInventoryLocation
+      summary: Delete inventory location
+      tags:
+        - inventory
+      parameters:
+        - name: inventory_location_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Inventory location deleted successfully
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        property:
+                          type: string
+                        type:
+                          type: string
+                        link:
+                          type: string
+                  request_id:
+                    type: string
+
+components:
+  schemas:
+    # Inventory-related schemas would be extracted from the main components section
+    # This is a placeholder for the actual schemas that would be relevant to inventory
+    InventoryLevel:
+      type: object
+      properties:
+        sku:
+          type: string
+        on_hand:
+          type: integer
+        allocated:
+          type: integer
+        available:
+          type: integer
+        average_cost:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        inventory_warehouse_id:
+          type: string
+        inventory_location_id:
+          type: string

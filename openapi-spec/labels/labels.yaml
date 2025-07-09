@@ -1,0 +1,966 @@
+# ShipStation API v2 - Labels Resource
+# This file contains all label-related endpoints and schemas
+# Including: label creation, tracking, voiding, return labels, and manifests
+
+paths:
+  /v2/labels:
+    x-visibility: public
+    summary: Labels
+    description: |
+      Manage shipping labels and their lifecycle.
+    get:
+      operationId: getLabels
+      summary: List labels
+      tags:
+        - labels
+      parameters:
+        - name: label_id
+          in: query
+          schema:
+            type: string
+        - name: shipment_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - processing
+              - completed
+              - error
+              - voided
+        - name: created_date_start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_date_end
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of labels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  labels:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LabelResponseBody'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pages:
+                    type: integer
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      last:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      next:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      prev:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    post:
+      operationId: createLabel
+      summary: Create label
+      tags:
+        - labels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequestBody'
+      responses:
+        '201':
+          description: Label created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/labels/rates/{rate_id}:
+    x-visibility: public
+    summary: Create Label from Rate
+    description: |
+      Create a shipping label from a specific rate.
+    post:
+      operationId: createLabelFromRate
+      summary: Create label from rate
+      tags:
+        - labels
+      parameters:
+        - name: rate_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                validate_address:
+                  type: boolean
+                  default: false
+                label_format:
+                  type: string
+                  enum:
+                    - pdf
+                    - png
+                    - zpl
+                  default: pdf
+                label_layout:
+                  type: string
+                  enum:
+                    - 4x6
+                    - letter
+                  default: 4x6
+                display_scheme:
+                  type: string
+                  enum:
+                    - label
+                    - qr_code
+                  default: label
+      responses:
+        '201':
+          description: Label created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/labels/shipment/{shipment_id}:
+    x-visibility: public
+    summary: Create Label from Shipment
+    description: |
+      Create a shipping label from a specific shipment.
+    post:
+      operationId: createLabelFromShipment
+      summary: Create label from shipment
+      tags:
+        - labels
+      parameters:
+        - name: shipment_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                validate_address:
+                  type: boolean
+                  default: false
+                label_format:
+                  type: string
+                  enum:
+                    - pdf
+                    - png
+                    - zpl
+                  default: pdf
+                label_layout:
+                  type: string
+                  enum:
+                    - 4x6
+                    - letter
+                  default: 4x6
+                display_scheme:
+                  type: string
+                  enum:
+                    - label
+                    - qr_code
+                  default: label
+      responses:
+        '201':
+          description: Label created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/labels/{label_id}:
+    x-visibility: public
+    summary: Label
+    description: |
+      Manage a specific shipping label.
+    get:
+      operationId: getLabel
+      summary: Get label
+      tags:
+        - labels
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Label details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/labels/{label_id}/return:
+    x-visibility: public
+    summary: Create Return Label
+    description: |
+      Create a return label for a specific label.
+    post:
+      operationId: createReturnLabel
+      summary: Create return label
+      tags:
+        - labels
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label_format:
+                  type: string
+                  enum:
+                    - pdf
+                    - png
+                    - zpl
+                  default: pdf
+                label_layout:
+                  type: string
+                  enum:
+                    - 4x6
+                    - letter
+                  default: 4x6
+                display_scheme:
+                  type: string
+                  enum:
+                    - label
+                    - qr_code
+                  default: label
+      responses:
+        '201':
+          description: Return label created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/labels/{label_id}/track:
+    x-visibility: public
+    summary: Track Label
+    description: |
+      Get tracking information for a specific label.
+    get:
+      operationId: trackLabel
+      summary: Track label
+      tags:
+        - labels
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Label tracking information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackingResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/labels/{label_id}/void:
+    x-visibility: public
+    summary: Void Label
+    description: |
+      Void a specific shipping label.
+    put:
+      operationId: voidLabel
+      summary: Void label
+      tags:
+        - labels
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Label voided successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  approved:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/manifests:
+    x-visibility: public
+    summary: Manifests
+    description: |
+      Manage shipping manifests for end-of-day processing.
+    get:
+      operationId: getManifests
+      summary: List manifests
+      tags:
+        - labels
+      parameters:
+        - name: warehouse_id
+          in: query
+          schema:
+            type: string
+        - name: created_date_start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_date_end
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of manifests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  manifests:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ManifestResponseBody'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pages:
+                    type: integer
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      last:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      next:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      prev:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    post:
+      operationId: createManifest
+      summary: Create manifest
+      tags:
+        - labels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                warehouse_id:
+                  type: string
+                label_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of label IDs to include in the manifest
+                submission_date:
+                  type: string
+                  format: date-time
+                  description: Date to submit the manifest
+              required:
+                - warehouse_id
+                - label_ids
+      responses:
+        '201':
+          description: Manifest created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/manifests/{manifest_id}:
+    x-visibility: public
+    summary: Manifest
+    description: |
+      Manage a specific shipping manifest.
+    get:
+      operationId: getManifest
+      summary: Get manifest
+      tags:
+        - labels
+      parameters:
+        - name: manifest_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Manifest details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+
+components:
+  schemas:
+    LabelResponseBody:
+      title: label_response_body
+      type: object
+      properties:
+        label_id:
+          type: string
+        status:
+          type: string
+          enum:
+            - processing
+            - completed
+            - error
+            - voided
+        shipment_id:
+          type: string
+        rate_id:
+          type: string
+        tracking_number:
+          type: string
+        label_download:
+          type: object
+          properties:
+            href:
+              type: string
+            pdf:
+              type: string
+            png:
+              type: string
+            zpl:
+              type: string
+        form_download:
+          type: object
+          properties:
+            href:
+              type: string
+            type:
+              type: string
+        insurance_claim:
+          type: object
+          properties:
+            href:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+        shipment_cost:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        insurance_cost:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+    CreateLabelRequestBody:
+      title: create_label_request_body
+      type: object
+      properties:
+        rate_id:
+          type: string
+        shipment_id:
+          type: string
+        validate_address:
+          type: boolean
+          default: false
+        label_format:
+          type: string
+          enum:
+            - pdf
+            - png
+            - zpl
+          default: pdf
+        label_layout:
+          type: string
+          enum:
+            - 4x6
+            - letter
+          default: 4x6
+        display_scheme:
+          type: string
+          enum:
+            - label
+            - qr_code
+          default: label
+      required:
+        - rate_id
+    TrackingResponseBody:
+      title: tracking_response_body
+      type: object
+      properties:
+        tracking_number:
+          type: string
+        status_code:
+          type: string
+        status_description:
+          type: string
+        carrier_status_code:
+          type: string
+        carrier_status_description:
+          type: string
+        ship_date:
+          type: string
+          format: date-time
+        estimated_delivery_date:
+          type: string
+          format: date-time
+        actual_delivery_date:
+          type: string
+          format: date-time
+        exception_description:
+          type: string
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              occurred_at:
+                type: string
+                format: date-time
+              carrier_occurred_at:
+                type: string
+                format: date-time
+              description:
+                type: string
+              city_locality:
+                type: string
+              state_province:
+                type: string
+              postal_code:
+                type: string
+              country_code:
+                type: string
+              company_name:
+                type: string
+              signer:
+                type: string
+              event_code:
+                type: string
+    ManifestResponseBody:
+      title: manifest_response_body
+      type: object
+      properties:
+        manifest_id:
+          type: string
+        form_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        ship_date:
+          type: string
+          format: date-time
+        address:
+          type: object
+          properties:
+            name:
+              type: string
+            company:
+              type: string
+            street1:
+              type: string
+            street2:
+              type: string
+            city:
+              type: string
+            state:
+              type: string
+            postal_code:
+              type: string
+            country:
+              type: string
+        label_ids:
+          type: array
+          items:
+            type: string
+        download:
+          type: object
+          properties:
+            href:
+              type: string

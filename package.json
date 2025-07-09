@@ -1,19 +1,23 @@
 {
-  "name": "n8n-nodes-<...>",
+  "name": "n8n-nodes-shipstation",
   "version": "0.1.0",
-  "description": "",
+  "description": "n8n community nodes for ShipStation API v2 integration",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "shipstation",
+    "shipping",
+    "logistics",
+    "fulfillment"
   ],
   "license": "MIT",
   "homepage": "",
   "author": {
-    "name": "",
-    "email": ""
+    "name": "ShipStation Integration",
+    "email": "dev@shipstation-integration.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/<...>/n8n-nodes-<...>.git"
+    "url": "https://github.com/nukleas/n8n-nodes-shipstation.git"
   },
   "engines": {
     "node": ">=20.15"
@@ -33,12 +37,10 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/ExampleCredentialsApi.credentials.js",
-      "dist/credentials/HttpBinApi.credentials.js"
+      "dist/credentials/ShipStationApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/ExampleNode/ExampleNode.node.js",
-      "dist/nodes/HttpBin/HttpBin.node.js"
+      "dist/nodes/ShipStation/ShipStation.node.js"
     ]
   },
   "devDependencies": {

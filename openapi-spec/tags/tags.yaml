@@ -1,0 +1,283 @@
+# ShipStation API v2 - Tags Resource
+# This file contains all tag-related endpoints and schemas
+# Including: tag creation, management, and assignment to shipments
+
+paths:
+  /v2/tags:
+    x-visibility: public
+    summary: Tags
+    description: |
+      Manage tags for organizing and categorizing shipments.
+    get:
+      operationId: getTags
+      summary: List tags
+      tags:
+        - tags
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TagResponseBody'
+                  total:
+                    type: integer
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    post:
+      operationId: createTag
+      summary: Create tag
+      tags:
+        - tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Tag name
+                color:
+                  type: string
+                  description: Tag color (hex color code)
+                  pattern: '^#[0-9A-Fa-f]{6}$'
+              required:
+                - name
+      responses:
+        '201':
+          description: Tag created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/tags/{tag_name}:
+    x-visibility: public
+    summary: Tag
+    description: |
+      Manage a specific tag.
+    get:
+      operationId: getTag
+      summary: Get tag
+      tags:
+        - tags
+      parameters:
+        - name: tag_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tag details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    put:
+      operationId: updateTag
+      summary: Update tag
+      tags:
+        - tags
+      parameters:
+        - name: tag_name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Tag name
+                color:
+                  type: string
+                  description: Tag color (hex color code)
+                  pattern: '^#[0-9A-Fa-f]{6}$'
+      responses:
+        '200':
+          description: Tag updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    delete:
+      operationId: deleteTag
+      summary: Delete tag
+      tags:
+        - tags
+      parameters:
+        - name: tag_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Tag deleted successfully
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+
+components:
+  schemas:
+    TagResponseBody:
+      title: tag_response_body
+      type: object
+      properties:
+        tag_id:
+          type: string
+        name:
+          type: string
+        color:
+          type: string
+          description: Tag color (hex color code)
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        created_at:
+          type: string
+          format: date-time
+        modified_at:
+          type: string
+          format: date-time

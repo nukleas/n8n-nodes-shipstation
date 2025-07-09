@@ -1,0 +1,331 @@
+# ShipStation API v2 - Warehouses Resource
+# This file contains all warehouse-related endpoints and schemas
+# Including: warehouse management and configuration
+
+paths:
+  /v2/warehouses:
+    x-visibility: public
+    summary: Warehouses
+    description: |
+      Manage warehouses for shipping operations.
+    get:
+      operationId: getWarehouses
+      summary: List warehouses
+      tags:
+        - warehouses
+      responses:
+        '200':
+          description: List of warehouses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  warehouses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WarehouseResponseBody'
+                  total:
+                    type: integer
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    post:
+      operationId: createWarehouse
+      summary: Create warehouse
+      tags:
+        - warehouses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Warehouse name
+                origin_address:
+                  $ref: '#/components/schemas/Address'
+                return_address:
+                  $ref: '#/components/schemas/Address'
+                is_default:
+                  type: boolean
+                  description: Whether this is the default warehouse
+                  default: false
+              required:
+                - name
+                - origin_address
+      responses:
+        '201':
+          description: Warehouse created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/warehouses/{warehouse_id}:
+    x-visibility: public
+    summary: Warehouse
+    description: |
+      Manage a specific warehouse.
+    get:
+      operationId: getWarehouse
+      summary: Get warehouse
+      tags:
+        - warehouses
+      parameters:
+        - name: warehouse_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Warehouse details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    put:
+      operationId: updateWarehouse
+      summary: Update warehouse
+      tags:
+        - warehouses
+      parameters:
+        - name: warehouse_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Warehouse name
+                origin_address:
+                  $ref: '#/components/schemas/Address'
+                return_address:
+                  $ref: '#/components/schemas/Address'
+                is_default:
+                  type: boolean
+                  description: Whether this is the default warehouse
+      responses:
+        '200':
+          description: Warehouse updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+    delete:
+      operationId: deleteWarehouse
+      summary: Delete warehouse
+      tags:
+        - warehouses
+      parameters:
+        - name: warehouse_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Warehouse deleted successfully
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+
+components:
+  schemas:
+    WarehouseResponseBody:
+      title: warehouse_response_body
+      type: object
+      properties:
+        warehouse_id:
+          type: string
+        name:
+          type: string
+        origin_address:
+          $ref: '#/components/schemas/Address'
+        return_address:
+          $ref: '#/components/schemas/Address'
+        is_default:
+          type: boolean
+          description: Whether this is the default warehouse
+        created_at:
+          type: string
+          format: date-time
+        modified_at:
+          type: string
+          format: date-time
+    Address:
+      title: address
+      type: object
+      properties:
+        name:
+          type: string
+        company:
+          type: string
+        street1:
+          type: string
+        street2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address_residential_indicator:
+          type: string
+          enum:
+            - yes
+            - no
+            - unknown
+      required:
+        - name
+        - street1
+        - city
+        - state
+        - postal_code
+        - country

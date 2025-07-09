@@ -1,0 +1,17 @@
+{
+	"node": "n8n-nodes-shipstation.shipStation",
+	"nodeVersion": "1.0",
+	"categories": ["Sales & Marketing", "Miscellaneous"],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://www.shipstation.com/docs/api/"
+			}
+		],
+		"credentialDocumentation": [
+			{
+				"url": "https://www.shipstation.com/docs/api/#/introduction/authentication"
+			}
+		]
+	}
+}

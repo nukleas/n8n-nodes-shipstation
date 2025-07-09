@@ -1,0 +1,401 @@
+# ShipStation API v2 - Rates Resource
+# This file contains all rate-related endpoints and schemas
+# Including: rate calculation, rate estimates, and rate management
+
+paths:
+  /v2/rates:
+    x-visibility: public
+    summary: Rates
+    description: |
+      Calculate shipping rates for packages and shipments.
+    post:
+      operationId: calculateRates
+      summary: Calculate rates
+      tags:
+        - rates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculateRatesRequestBody'
+      responses:
+        '200':
+          description: Calculated rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RateResponseBody'
+                  invalid_rates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        carrier_id:
+                          type: string
+                        service_code:
+                          type: string
+                        error_messages:
+                          type: array
+                          items:
+                            type: string
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/rates/estimate:
+    x-visibility: public
+    summary: Rate Estimate
+    description: |
+      Get estimated shipping rates for a package.
+    post:
+      operationId: estimateRates
+      summary: Estimate rates
+      tags:
+        - rates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                from_address:
+                  $ref: '#/components/schemas/Address'
+                to_address:
+                  $ref: '#/components/schemas/Address'
+                weight:
+                  type: object
+                  properties:
+                    value:
+                      type: number
+                    unit:
+                      type: string
+                      enum:
+                        - pound
+                        - ounce
+                        - kilogram
+                        - gram
+                dimensions:
+                  type: object
+                  properties:
+                    unit:
+                      type: string
+                      enum:
+                        - inch
+                        - centimeter
+                    length:
+                      type: number
+                    width:
+                      type: number
+                    height:
+                      type: number
+                confirmation:
+                  type: string
+                  enum:
+                    - none
+                    - delivery
+                    - signature
+                    - adult_signature
+                    - direct_signature
+                insurance:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - none
+                        - shipsurance
+                        - carrier
+                    insure_shipment:
+                      type: boolean
+                    insured_value:
+                      type: object
+                      properties:
+                        amount:
+                          type: number
+                        currency:
+                          type: string
+              required:
+                - from_address
+                - to_address
+                - weight
+      responses:
+        '200':
+          description: Estimated rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RateResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /v2/rates/{rate_id}:
+    x-visibility: public
+    summary: Rate
+    description: |
+      Get details for a specific rate.
+    get:
+      operationId: getRate
+      summary: Get rate
+      tags:
+        - rates
+      parameters:
+        - name: rate_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rate details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateResponseBody'
+        '400':
+          description: The request contained errors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: The request was denied due to an authentication error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '403':
+          description: The request was denied due to authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: The specified resource does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+        '500':
+          description: The request was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+
+components:
+  schemas:
+    CalculateRatesRequestBody:
+      title: calculate_rates_request_body
+      type: object
+      properties:
+        shipment_id:
+          type: string
+        rate_options:
+          type: object
+          properties:
+            carrier_ids:
+              type: array
+              items:
+                type: string
+            service_codes:
+              type: array
+              items:
+                type: string
+            package_types:
+              type: array
+              items:
+                type: string
+            calculate_tax_amount:
+              type: boolean
+              default: false
+            preferred_currency:
+              type: string
+              enum:
+                - USD
+                - CAD
+                - EUR
+                - GBP
+              default: USD
+      required:
+        - shipment_id
+    RateResponseBody:
+      title: rate_response_body
+      type: object
+      properties:
+        rate_id:
+          type: string
+        rate_type:
+          type: string
+          enum:
+            - shipment
+            - check
+        carrier_id:
+          type: string
+        shipping_amount:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        insurance_amount:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        confirmation_amount:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        other_amount:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        tax_amount:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+        zone:
+          type: integer
+        package_type:
+          type: string
+        delivery_days:
+          type: integer
+        guaranteed_service:
+          type: boolean
+        estimated_delivery_date:
+          type: string
+          format: date-time
+        carrier_delivery_days:
+          type: string
+        ship_date:
+          type: string
+          format: date-time
+        negotiated_rate:
+          type: boolean
+        service_type:
+          type: string
+        service_code:
+          type: string
+        trackable:
+          type: boolean
+        carrier_code:
+          type: string
+        carrier_nickname:
+          type: string
+        carrier_friendly_name:
+          type: string
+        validation_status:
+          type: string
+          enum:
+            - valid
+            - invalid
+            - has_warnings
+            - unknown
+        warning_messages:
+          type: array
+          items:
+            type: string
+        error_messages:
+          type: array
+          items:
+            type: string
+    Address:
+      title: address
+      type: object
+      properties:
+        name:
+          type: string
+        company:
+          type: string
+        street1:
+          type: string
+        street2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address_residential_indicator:
+          type: string
+          enum:
+            - yes
+            - no
+            - unknown
+      required:
+        - name
+        - street1
+        - city
+        - state
+        - postal_code
+        - country
