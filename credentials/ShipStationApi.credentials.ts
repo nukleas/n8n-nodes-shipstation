@@ -19,7 +19,8 @@ export class ShipStationApi implements ICredentialType {
 			},
 			default: '',
 			required: true,
-			description: 'Your ShipStation API key. You can generate this in your ShipStation account settings.',
+			description:
+				'Your ShipStation API key. You can generate this in your ShipStation account settings.',
 		},
 	];
 

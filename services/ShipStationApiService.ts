@@ -1,4 +1,4 @@
-import { ICredentialDataDecryptedObject } from 'n8n-workflow';
+import { IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
 
 export interface ShipStationApiResponse<T> {
 	data?: T;
@@ -20,7 +20,7 @@ export interface PaginatedResponse<T> {
 export class ShipStationApiService {
 	private readonly baseUrl = 'https://api.shipstation.com';
 
-	constructor(private credentials: ICredentialDataDecryptedObject) {}
+	constructor(private context: IExecuteFunctions) {}
 
 	async makeRequest<T>(
 		endpoint: string,
@@ -30,46 +30,43 @@ export class ShipStationApiService {
 	): Promise<ShipStationApiResponse<T>> {
 		const url = `${this.baseUrl}${endpoint}`;
 		
-		const headers: Record<string, string> = {
-			'Content-Type': 'application/json',
-			'api-key': this.credentials.apiKey as string,
-			...additionalHeaders,
-		};
-
-		const config: RequestInit = {
+		const options: IHttpRequestOptions = {
 			method,
-			headers,
+			url,
+			headers: {
+				'Content-Type': 'application/json',
+				...additionalHeaders,
+			},
+			json: true,
 		};
 
 		if (data && (method === 'POST' || method === 'PUT')) {
-			config.body = JSON.stringify(data);
+			options.body = data;
 		}
 
 		try {
-			const response = await fetch(url, config);
-			const responseData = await response.json() as any;
+			const responseData = await this.context.helpers.requestWithAuthentication.call(
+				this.context,
+				'shipStationApi',
+				options,
+			);
 
-			if (!response.ok) {
-				if (responseData.message && responseData.message.includes('upgrade your billing plan')) {
-					return {
-						error: 'Your ShipStation plan does not support this feature. Please upgrade your plan to use this endpoint.',
-						statusCode: response.status,
-					};
-				}
+			return {
+				data: responseData as T,
+				statusCode: 200,
+			};
+		} catch (error: any) {
+			// Handle specific ShipStation error messages
+			if (error.response?.body?.message?.includes('upgrade your billing plan')) {
 				return {
-					error: responseData.message || `HTTP ${response.status}: ${response.statusText}`,
-					statusCode: response.status,
+					error: 'Your ShipStation plan does not support this feature. Please upgrade your plan to use this endpoint.',
+					statusCode: error.response?.statusCode || 400,
 				};
 			}
 
 			return {
-				data: responseData as T,
-				statusCode: response.status,
-			};
-		} catch (error) {
-			return {
-				error: error instanceof Error ? error.message : 'Unknown error occurred',
-				statusCode: 0,
+				error: error.response?.body?.message || error.message || 'Unknown error occurred',
+				statusCode: error.response?.statusCode || 0,
 			};
 		}
 	}

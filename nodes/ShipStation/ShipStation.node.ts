@@ -4,7 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 	NodeOperationError,
-	NodeConnectionType,
+	NodeConnectionTypes,
 	IDataObject,
 } from 'n8n-workflow';
 
@@ -14,29 +14,58 @@ import { PaginationService } from '../../services/PaginationService';
 
 // Helper function to extract items from API response
 function extractItemsFromResponse(data: any): any[] {
+	if (!data) {
+		return [];
+	}
+	
 	if (Array.isArray(data)) {
 		return data;
 	}
 
-	return data.shipments || data.labels || data.inventory || data.products || 
-		   data.rates || data.batches || data.carriers || data.warehouses || 
-		   data.tags || [];
+	// Check for known ShipStation response patterns
+	const items = 
+		data.shipments ||
+		data.labels ||
+		data.inventory ||
+		data.products ||
+		data.rates ||
+		data.batches ||
+		data.carriers ||
+		data.warehouses ||
+		data.tags;
+
+	if (items) {
+		return Array.isArray(items) ? items : [items];
+	}
+
+	// If no known patterns match, check for any array property
+	const arrayProperty = Object.values(data).find(value => Array.isArray(value));
+	if (arrayProperty) {
+		return arrayProperty as any[];
+	}
+
+	// If data is an object but not an array and no array properties found, wrap it
+	if (typeof data === 'object' && !Array.isArray(data)) {
+		return [data];
+	}
+
+	return [];
 }
 
 // Helper function to get correct endpoint for resource
 function getResourceEndpoint(resource: string): string {
 	const resourceMap: Record<string, string> = {
-		'shipment': 'shipments',
-		'label': 'labels', 
-		'inventory': 'inventory',
-		'product': 'products',
-		'rate': 'rates',
-		'batch': 'batches',
-		'carrier': 'carriers',
-		'warehouse': 'warehouses',
-		'tag': 'tags'
+		shipment: 'shipments',
+		label: 'labels',
+		inventory: 'inventory',
+		product: 'products',
+		rate: 'rates',
+		batch: 'batches',
+		carrier: 'carriers',
+		warehouse: 'warehouses',
+		tag: 'tags',
 	};
-	
+
 	return resourceMap[resource] || `${resource}s`;
 }
 
@@ -44,15 +73,18 @@ export class ShipStation implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'ShipStation',
 		name: 'shipStation',
-		icon: 'file:shipstation.svg',
+		icon: {
+			light: 'file:shipstation.svg',
+			dark: 'file:shipstation.dark.svg',
+		},
 		group: ['transform'],
 		version: 1,
 		description: 'Interact with ShipStation API v2',
 		defaults: {
 			name: 'ShipStation',
 		},
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
 				name: 'shipStationApi',
@@ -105,7 +137,7 @@ export class ShipStation implements INodeType {
 				],
 				default: 'shipment',
 			},
-			
+
 			// Shipment Operations
 			{
 				displayName: 'Operation',
@@ -520,8 +552,7 @@ export class ShipStation implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
-		const credentials = await this.getCredentials('shipStationApi');
-		const apiService = new ShipStationApiService(credentials);
+		const apiService = new ShipStationApiService(this);
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -535,15 +566,19 @@ export class ShipStation implements INodeType {
 					const options = this.getNodeParameter('options', i, {}) as any;
 					const returnAll = options.returnAll || false;
 					const endpoint = `/v2/${getResourceEndpoint(resource)}`;
-					
+
 					if (returnAll) {
 						// Handle inventory resource differently (no pagination)
 						if (resource === 'inventory') {
 							const params = PaginationService.buildPaginationParams({ pageSize: 1000 }, resource);
 							const response = await apiService.get(endpoint, params);
-							
+
 							if (response.error) {
 								throw ErrorService.handleApiError(response.error, this, i);
+							}
+
+							if (!response.data) {
+								throw new NodeOperationError(this.getNode(), 'No data received from ShipStation API', { itemIndex: i });
 							}
 
 							const items = extractItemsFromResponse(response.data);
@@ -555,33 +590,48 @@ export class ShipStation implements INodeType {
 							let hasMore = true;
 
 							while (hasMore) {
-								const params = PaginationService.buildPaginationParams({ page, pageSize: 500 }, resource);
+								const params = PaginationService.buildPaginationParams(
+									{ page, pageSize: 500 },
+									resource,
+								);
 								const response = await apiService.get(endpoint, params);
-								
+
 								if (response.error) {
 									throw ErrorService.handleApiError(response.error, this, i);
+								}
+
+								if (!response.data) {
+									throw new NodeOperationError(this.getNode(), 'No data received from ShipStation API', { itemIndex: i });
 								}
 
 								const data = response.data as any;
 								const items = extractItemsFromResponse(data);
 								allData = allData.concat(items);
 
-								hasMore = data.page < data.pages;
+								// Handle pagination safely
+								hasMore = data && typeof data.page === 'number' && typeof data.pages === 'number' && data.page < data.pages;
 								page++;
 							}
 
 							responseData = { data: allData, statusCode: 200 };
 						}
 					} else {
-						const params = PaginationService.buildPaginationParams({
-							page: options.page,
-							pageSize: options.pageSize,
-						}, resource);
-						
+						const params = PaginationService.buildPaginationParams(
+							{
+								page: options.page,
+								pageSize: options.pageSize,
+							},
+							resource,
+						);
+
 						const response = await apiService.get(endpoint, params);
-						
+
 						if (response.error) {
 							throw ErrorService.handleApiError(response.error, this, i);
+						}
+
+						if (!response.data) {
+							throw new NodeOperationError(this.getNode(), 'No data received from ShipStation API', { itemIndex: i });
 						}
 
 						const items = extractItemsFromResponse(response.data);
@@ -617,35 +667,50 @@ export class ShipStation implements INodeType {
 				else if (operation === 'cancel' && resource === 'shipment') {
 					const id = this.getNodeParameter('id', i) as string;
 					responseData = await apiService.post(`/v2/shipments/${id}/cancel`, {});
-				}
-				else if (operation === 'void' && resource === 'label') {
+				} else if (operation === 'void' && resource === 'label') {
 					const id = this.getNodeParameter('id', i) as string;
 					responseData = await apiService.put(`/v2/labels/${id}/void`, {});
-				}
-				else if (operation === 'process' && resource === 'batch') {
+				} else if (operation === 'process' && resource === 'batch') {
 					const id = this.getNodeParameter('id', i) as string;
 					responseData = await apiService.post(`/v2/batches/${id}/process`, {});
-				}
-				else if (operation === 'calculate' && resource === 'rate') {
+				} else if (operation === 'calculate' && resource === 'rate') {
 					const jsonData = this.getNodeParameter('jsonData', i) as string;
 					responseData = await apiService.post('/v2/rates', JSON.parse(jsonData));
-				}
-				else if (operation === 'update' && resource === 'inventory') {
+				} else if (operation === 'update' && resource === 'inventory') {
 					const jsonData = this.getNodeParameter('jsonData', i) as string;
 					responseData = await apiService.post('/v2/inventory', JSON.parse(jsonData));
-				}
-				else {
-					throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, { itemIndex: i });
+				} else {
+					throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, {
+						itemIndex: i,
+					});
 				}
 
 				if (responseData.error) {
 					throw ErrorService.handleApiError(responseData.error, this, i);
 				}
 
-				returnData.push({ json: responseData.data as IDataObject });
+				// Handle list operations that return arrays differently
+				if (operation === 'list' && Array.isArray(responseData.data)) {
+					// For list operations, add each item separately with proper pairing
+					responseData.data.forEach((item: any) => {
+						returnData.push({
+							json: item as IDataObject,
+							pairedItem: { item: i },
+						});
+					});
+				} else {
+					// For single item operations
+					returnData.push({ 
+						json: responseData.data as IDataObject,
+						pairedItem: { item: i },
+					});
+				}
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: error.message } });
+					returnData.push({ 
+						json: { error: error.message },
+						pairedItem: { item: i },
+					});
 					continue;
 				}
 				throw error;
@@ -654,5 +719,4 @@ export class ShipStation implements INodeType {
 
 		return [returnData];
 	}
-
 }
